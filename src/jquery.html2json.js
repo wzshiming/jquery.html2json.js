@@ -35,7 +35,13 @@
   }
 
 
-  function html2json(h) {
+  function html2json(h, opt) {
+    opt = opt || {
+      reduce: true,
+      classList: false,
+      localName: false,
+      mergeText: true
+    };
     if (!h) {
       return null;
     }
@@ -43,8 +49,17 @@
       var r = [];
       for (var i = 0; i != h.length; i++) {
         var v = h[i];
-        var d = html2json(v);
-        if (d) {
+        var d = html2json(v, opt);
+        if (!d) {
+          continue;
+        }
+        if (opt.reduce && h.length == 1 && d.childNodes instanceof Array) {
+          d = d.childNodes;
+          for (var i0 = 0; i0 != d.length; i0++) {
+            var v0 = d[i0];
+            r.push(v0);
+          }
+        } else {
           r.push(d);
         }
       }
@@ -57,28 +72,35 @@
     if (h.innerHTML == h.textContent && h.textContent) {
       o.textContent = h.textContent;
     }
-    var n = html2json(h.childNodes);
+    var n = html2json(h.childNodes, opt);
     if (n) {
       o.childNodes = n;
     }
-    var l = toArray(h.classList);
-    if (l) {
-      o.classList = toArray(h.classList);
+    if (opt.classList) {
+      var l = toArray(h.classList);
+      if (l) {
+        o.classList = toArray(h.classList);
+      }
     }
-    if (h.localName) {
+    if (opt.localName && h.localName) {
       o.localName = h.localName;
+    }
+
+    if (opt.mergeText && o.textContent) {
+      return o.textContent;
     }
 
     return o.textContent || o.childNodes || o.src ? o : null;
   }
 
+
   $.extend({
-    html2json: function(html) {
-      return html2json($(html));
+    html2json: function(html, opt) {
+      return html2json($(html), opt);
     }
   });
 
-  $.fn.html2json = function() {
-    return html2json(this);
+  $.fn.html2json = function(opt) {
+    return html2json(this, opt);
   };
 }));
